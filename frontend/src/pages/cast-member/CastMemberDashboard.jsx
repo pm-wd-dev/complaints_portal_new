@@ -4,7 +4,7 @@ import PortalLayout from '@/components/layout/PortalLayout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
-import { supabase } from '@/lib/supabase'
+import { supabase, getErrorMessage } from '@/lib/supabase'
 import { useAuthStore } from '@/store/authStore'
 import { formatDateTime, getStatusLabel } from '@/lib/utils'
 import { FileText, Plus, Eye, TrendingUp, CheckCircle, Clock } from 'lucide-react'
@@ -20,24 +20,29 @@ export default function CastMemberDashboard() {
   const [stats, setStats] = useState({ total: 0, resolved: 0, under_review: 0 })
 
   useEffect(() => {
-    if (!user) { navigate('/cast-member/login'); return }
     load()
-  }, [user])
+  }, [])
 
   const load = async () => {
     setLoading(true)
-    const { data } = await supabase
-      .from('complaints')
-      .select('*, stages(name,color)')
-      .order('created_at', { ascending: false })
-    const list = data || []
-    setComplaints(list)
-    setStats({
-      total: list.length,
-      resolved: list.filter(c => c.status === 'resolved').length,
-      under_review: list.filter(c => c.status === 'under_review').length,
-    })
-    setLoading(false)
+    try {
+      const { data, error } = await supabase
+        .from('complaints')
+        .select('*, stages(name,color)')
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      const list = data || []
+      setComplaints(list)
+      setStats({
+        total: list.length,
+        resolved: list.filter(c => c.status === 'resolved').length,
+        under_review: list.filter(c => c.status === 'under_review').length,
+      })
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleSignOut = async () => {

@@ -29,10 +29,15 @@ export default function LoginPage() {
         .from('profiles')
         .select('*')
         .eq('id', user.id)
-        .single()
+        .maybeSingle()
 
       const role = profile?.role
 
+      if (!profile) {
+        await supabase.auth.signOut()
+        toast.error('Account profile not found. Please contact support.')
+        return
+      }
       if (role === 'admin') {
         navigate('/admin')
       } else if (role === 'cast_member') {
@@ -42,7 +47,6 @@ export default function LoginPage() {
         setPendingRole(role)
         setPendingUser(user)
         setPendingProfile(profile)
-        toast.success('OTP sent to your email (use: 0000 for testing)')
         setStep('otp')
       } else {
         await supabase.auth.signOut()

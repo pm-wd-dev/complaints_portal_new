@@ -6,9 +6,10 @@ import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
-import { supabase } from '@/lib/supabase'
+import { supabase, getErrorMessage } from '@/lib/supabase'
 import { formatDateTime, getStatusLabel } from '@/lib/utils'
 import { Plus, Search, Eye } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 const STATUS_OPTIONS = ['all','submitted','under_review','escalated','resolved','closed']
 const statusVariant = { submitted:'blue', under_review:'yellow', escalated:'orange', resolved:'green', closed:'default' }
@@ -24,11 +25,17 @@ export default function ComplaintsListPage() {
 
   const load = async () => {
     setLoading(true)
-    let q = supabase.from('complaints').select('*, stages(name,color)').order('created_at', { ascending: false })
-    if (status !== 'all') q = q.eq('status', status)
-    const { data } = await q
-    setComplaints(data || [])
-    setLoading(false)
+    try {
+      let q = supabase.from('complaints').select('*, stages(name,color)').order('created_at', { ascending: false })
+      if (status !== 'all') q = q.eq('status', status)
+      const { data, error } = await q
+      if (error) throw error
+      setComplaints(data || [])
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    } finally {
+      setLoading(false)
+    }
   }
 
   const filtered = complaints.filter(c =>

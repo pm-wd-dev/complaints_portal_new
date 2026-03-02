@@ -1,7 +1,7 @@
 import { Navigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 
-export default function AdminGuard({ children }) {
+export default function CastMemberGuard({ children }) {
   const { user, profile, loading } = useAuthStore()
 
   if (loading) {
@@ -16,7 +16,7 @@ export default function AdminGuard({ children }) {
   }
 
   if (!user || !profile) return <Navigate to="/login" replace />
-  if (profile.role !== 'admin') return <Navigate to="/login" replace />
+  if (profile.role !== 'cast_member') return <Navigate to="/login" replace />
 
   return children
 }

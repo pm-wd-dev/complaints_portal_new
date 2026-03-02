@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { useAuthStore } from '@/store/authStore'
 import AdminGuard from '@/components/guards/AdminGuard'
+import CastMemberGuard from '@/components/guards/CastMemberGuard'
 import RespondentGuard from '@/components/guards/RespondentGuard'
 import LawyerGuard from '@/components/guards/LawyerGuard'
 
@@ -87,9 +88,9 @@ export default function App() {
 
         {/* Cast Member */}
         <Route path="/cast-member/login" element={<CastMemberLoginPage />} />
-        <Route path="/cast-member/dashboard" element={<CastMemberDashboard />} />
-        <Route path="/cast-member/complaints/create" element={<CastMemberCreateComplaint />} />
-        <Route path="/cast-member/complaints/:id" element={<CastMemberComplaintDetail />} />
+        <Route path="/cast-member/dashboard" element={<CastMemberGuard><CastMemberDashboard /></CastMemberGuard>} />
+        <Route path="/cast-member/complaints/create" element={<CastMemberGuard><CastMemberCreateComplaint /></CastMemberGuard>} />
+        <Route path="/cast-member/complaints/:id" element={<CastMemberGuard><CastMemberComplaintDetail /></CastMemberGuard>} />
 
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />

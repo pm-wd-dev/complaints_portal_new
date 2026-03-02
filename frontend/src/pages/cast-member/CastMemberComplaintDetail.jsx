@@ -28,17 +28,23 @@ export default function CastMemberComplaintDetail() {
 
   const load = async () => {
     setLoading(true)
-    const [{ data: c }, { data: cr }, { data: il }, { data: att }] = await Promise.all([
-      supabase.from('complaints').select('*, stages(*), locations(*)').eq('id', id).single(),
-      supabase.from('complaint_respondents').select('*, profiles(name,email), complaint_responses(*)').eq('complaint_id', id),
-      supabase.from('investigation_logs').select('*, profiles(name)').eq('complaint_id', id).order('created_at', { ascending: false }),
-      supabase.from('attachments').select('*').eq('complaint_id', id).order('created_at', { ascending: false }),
-    ])
-    setComplaint(c)
-    setRespondents(cr || [])
-    setLogs(il || [])
-    setAttachments(att || [])
-    setLoading(false)
+    try {
+      const [{ data: c, error }, { data: cr }, { data: il }, { data: att }] = await Promise.all([
+        supabase.from('complaints').select('*, stages(*), locations(*)').eq('id', id).single(),
+        supabase.from('complaint_respondents').select('*, profiles(name,email), complaint_responses(*)').eq('complaint_id', id),
+        supabase.from('investigation_logs').select('*, profiles(name)').eq('complaint_id', id).order('created_at', { ascending: false }),
+        supabase.from('attachments').select('*').eq('complaint_id', id).order('created_at', { ascending: false }),
+      ])
+      if (error) throw error
+      setComplaint(c)
+      setRespondents(cr || [])
+      setLogs(il || [])
+      setAttachments(att || [])
+    } catch (err) {
+      toast.error(getErrorMessage(err))
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleFileUpload = async (e) => {

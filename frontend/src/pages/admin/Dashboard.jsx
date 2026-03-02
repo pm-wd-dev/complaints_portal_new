@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react'
 import AdminLayout from '@/components/layout/AdminLayout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
-import { supabase } from '@/lib/supabase'
+import { supabase, getErrorMessage } from '@/lib/supabase'
 import { formatDateTime, getStatusColor, getStatusLabel } from '@/lib/utils'
 import { FileText, Clock, CheckCircle, AlertTriangle, Users, TrendingUp } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import toast from 'react-hot-toast'
 
 export default function Dashboard() {
   const [stats, setStats] = useState({ total: 0, submitted: 0, under_review: 0, resolved: 0, escalated: 0 })
@@ -14,17 +15,22 @@ export default function Dashboard() {
 
   useEffect(() => {
     const load = async () => {
-      const [{ data: complaints }, { count: total }] = await Promise.all([
-        supabase.from('complaints').select('*').order('created_at', { ascending: false }).limit(8),
-        supabase.from('complaints').select('*', { count: 'exact', head: true }),
-      ])
-      const byStatus = (complaints || []).reduce((acc, c) => {
-        acc[c.status] = (acc[c.status] || 0) + 1
-        return acc
-      }, {})
-      setStats({ total: total || 0, ...byStatus })
-      setRecent(complaints || [])
-      setLoading(false)
+      try {
+        const [{ data: complaints }, { count: total }] = await Promise.all([
+          supabase.from('complaints').select('*').order('created_at', { ascending: false }).limit(8),
+          supabase.from('complaints').select('*', { count: 'exact', head: true }),
+        ])
+        const byStatus = (complaints || []).reduce((acc, c) => {
+          acc[c.status] = (acc[c.status] || 0) + 1
+          return acc
+        }, {})
+        setStats({ total: total || 0, ...byStatus })
+        setRecent(complaints || [])
+      } catch (err) {
+        toast.error(getErrorMessage(err))
+      } finally {
+        setLoading(false)
+      }
     }
     load()
   }, [])

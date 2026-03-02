@@ -44,7 +44,7 @@ export const useAuthStore = create((set, get) => ({
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single()
+        .maybeSingle()
       if (data) set({ profile: data })
     } catch {
       // ignore — user continues without profile
