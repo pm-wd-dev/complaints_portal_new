@@ -1,15 +1,15 @@
 -- =============================================
 -- COMPLAINT MANAGEMENT SYSTEM — SUPABASE SCHEMA
--- Run this entire file in Supabase SQL Editor
+-- Safe to run multiple times (idempotent)
 -- =============================================
 
--- Enable UUID extension
 create extension if not exists "uuid-ossp";
 
 -- =============================================
--- PROFILES (extends Supabase auth.users)
+-- TABLES
 -- =============================================
-create table public.profiles (
+
+create table if not exists public.profiles (
   id uuid references auth.users(id) on delete cascade primary key,
   name text not null,
   email text not null,
@@ -18,10 +18,7 @@ create table public.profiles (
   updated_at timestamptz default now()
 );
 
--- =============================================
--- LOCATIONS
--- =============================================
-create table public.locations (
+create table if not exists public.locations (
   id uuid default uuid_generate_v4() primary key,
   name text not null,
   city text,
@@ -31,10 +28,7 @@ create table public.locations (
   updated_at timestamptz default now()
 );
 
--- =============================================
--- STAGES
--- =============================================
-create table public.stages (
+create table if not exists public.stages (
   id uuid default uuid_generate_v4() primary key,
   name text not null,
   step_number int not null default 1,
@@ -44,17 +38,14 @@ create table public.stages (
   updated_at timestamptz default now()
 );
 
--- Default stages
 insert into public.stages (name, step_number, color) values
   ('Initial Review', 1, '#3b82f6'),
   ('Investigation', 2, '#f59e0b'),
   ('Resolution', 3, '#10b981'),
-  ('Closed', 4, '#6b7280');
+  ('Closed', 4, '#6b7280')
+on conflict do nothing;
 
--- =============================================
--- COMPLAINTS
--- =============================================
-create table public.complaints (
+create table if not exists public.complaints (
   id uuid default uuid_generate_v4() primary key,
   case_number text unique not null,
   submitted_as text default 'individual' check (submitted_as in ('individual','organization')),
@@ -82,10 +73,7 @@ create table public.complaints (
   updated_at timestamptz default now()
 );
 
--- =============================================
--- COMPLAINT RESPONDENTS
--- =============================================
-create table public.complaint_respondents (
+create table if not exists public.complaint_respondents (
   id uuid default uuid_generate_v4() primary key,
   complaint_id uuid references public.complaints(id) on delete cascade not null,
   user_id uuid references public.profiles(id) on delete cascade not null,
@@ -95,10 +83,7 @@ create table public.complaint_respondents (
   unique(complaint_id, user_id)
 );
 
--- =============================================
--- COMPLAINT LAWYERS
--- =============================================
-create table public.complaint_lawyers (
+create table if not exists public.complaint_lawyers (
   id uuid default uuid_generate_v4() primary key,
   complaint_id uuid references public.complaints(id) on delete cascade not null,
   user_id uuid references public.profiles(id) on delete cascade not null,
@@ -108,10 +93,7 @@ create table public.complaint_lawyers (
   unique(complaint_id, user_id)
 );
 
--- =============================================
--- COMPLAINT RESPONSES (from respondents)
--- =============================================
-create table public.complaint_responses (
+create table if not exists public.complaint_responses (
   id uuid default uuid_generate_v4() primary key,
   complaint_respondent_id uuid references public.complaint_respondents(id) on delete cascade not null,
   response text not null,
@@ -119,10 +101,7 @@ create table public.complaint_responses (
   updated_at timestamptz default now()
 );
 
--- =============================================
--- COMPLAINT REPLIES (messages within complaint)
--- =============================================
-create table public.complaint_replies (
+create table if not exists public.complaint_replies (
   id uuid default uuid_generate_v4() primary key,
   complaint_id uuid references public.complaints(id) on delete cascade not null,
   user_id uuid references public.profiles(id) on delete set null,
@@ -132,10 +111,7 @@ create table public.complaint_replies (
   created_at timestamptz default now()
 );
 
--- =============================================
--- ATTACHMENTS
--- =============================================
-create table public.attachments (
+create table if not exists public.attachments (
   id uuid default uuid_generate_v4() primary key,
   complaint_id uuid references public.complaints(id) on delete cascade not null,
   respondent_response_id uuid references public.complaint_responses(id) on delete set null,
@@ -149,10 +125,7 @@ create table public.attachments (
   created_at timestamptz default now()
 );
 
--- =============================================
--- INVESTIGATION LOGS
--- =============================================
-create table public.investigation_logs (
+create table if not exists public.investigation_logs (
   id uuid default uuid_generate_v4() primary key,
   complaint_id uuid references public.complaints(id) on delete cascade not null,
   note text not null,
@@ -162,10 +135,7 @@ create table public.investigation_logs (
   updated_at timestamptz default now()
 );
 
--- =============================================
--- CASE RESOLUTIONS
--- =============================================
-create table public.case_resolutions (
+create table if not exists public.case_resolutions (
   id uuid default uuid_generate_v4() primary key,
   complaint_id uuid references public.complaints(id) on delete cascade not null,
   resolution_text text not null,
@@ -176,10 +146,7 @@ create table public.case_resolutions (
   updated_at timestamptz default now()
 );
 
--- =============================================
--- CASE SIGNATURES
--- =============================================
-create table public.case_signatures (
+create table if not exists public.case_signatures (
   id uuid default uuid_generate_v4() primary key,
   complaint_id uuid references public.complaints(id) on delete cascade not null,
   resolution_id uuid references public.case_resolutions(id) on delete cascade not null,
@@ -194,10 +161,7 @@ create table public.case_signatures (
   unique(resolution_id, signer_email)
 );
 
--- =============================================
--- RESPONDENT ACCESS TOKENS
--- =============================================
-create table public.respondent_accesses (
+create table if not exists public.respondent_accesses (
   id uuid default uuid_generate_v4() primary key,
   user_id uuid references public.profiles(id) on delete cascade not null,
   complaint_id uuid references public.complaints(id) on delete cascade not null,
@@ -208,10 +172,7 @@ create table public.respondent_accesses (
   created_at timestamptz default now()
 );
 
--- =============================================
--- LAWYER ACCESS TOKENS
--- =============================================
-create table public.lawyer_accesses (
+create table if not exists public.lawyer_accesses (
   id uuid default uuid_generate_v4() primary key,
   user_id uuid references public.profiles(id) on delete cascade not null,
   complaint_id uuid references public.complaints(id) on delete cascade not null,
@@ -221,10 +182,7 @@ create table public.lawyer_accesses (
   created_at timestamptz default now()
 );
 
--- =============================================
--- GUEST OTPs
--- =============================================
-create table public.guest_otps (
+create table if not exists public.guest_otps (
   id uuid default uuid_generate_v4() primary key,
   email text not null,
   case_number text not null,
@@ -234,10 +192,7 @@ create table public.guest_otps (
   created_at timestamptz default now()
 );
 
--- =============================================
--- STAGE CHANGE LOGS
--- =============================================
-create table public.stage_change_logs (
+create table if not exists public.stage_change_logs (
   id uuid default uuid_generate_v4() primary key,
   complaint_id uuid references public.complaints(id) on delete cascade not null,
   from_stage_id uuid references public.stages(id) on delete set null,
@@ -268,64 +223,71 @@ alter table public.lawyer_accesses enable row level security;
 alter table public.guest_otps enable row level security;
 alter table public.stage_change_logs enable row level security;
 
--- Helper function: get current user role
+-- =============================================
+-- HELPER FUNCTION
+-- =============================================
+
 create or replace function public.get_my_role()
 returns text language sql security definer as $$
   select role from public.profiles where id = auth.uid();
 $$;
 
--- PROFILES policies
-create policy "Users can view own profile" on public.profiles
+-- =============================================
+-- POLICIES (safe to re-run)
+-- =============================================
+
+-- PROFILES
+create policy if not exists "Users can view own profile" on public.profiles
   for select using (id = auth.uid());
-create policy "Admins can view all profiles" on public.profiles
+create policy if not exists "Admins can view all profiles" on public.profiles
   for select using (public.get_my_role() = 'admin');
-create policy "Users can update own profile" on public.profiles
+create policy if not exists "Users can update own profile" on public.profiles
   for update using (id = auth.uid());
-create policy "Admins can manage profiles" on public.profiles
+create policy if not exists "Admins can manage profiles" on public.profiles
   for all using (public.get_my_role() = 'admin');
 
--- COMPLAINTS policies
-create policy "Admins see all complaints" on public.complaints
+-- COMPLAINTS
+create policy if not exists "Admins see all complaints" on public.complaints
   for all using (public.get_my_role() = 'admin');
-create policy "Cast members see all complaints" on public.complaints
+create policy if not exists "Cast members see all complaints" on public.complaints
   for select using (public.get_my_role() = 'cast_member');
-create policy "Users see own complaints" on public.complaints
+create policy if not exists "Users see own complaints" on public.complaints
   for select using (user_id = auth.uid());
-create policy "Authenticated users can create complaints" on public.complaints
+create policy if not exists "Authenticated users can create complaints" on public.complaints
   for insert with check (auth.uid() is not null);
-create policy "Public can insert guest complaints" on public.complaints
+create policy if not exists "Public can insert guest complaints" on public.complaints
   for insert with check (true);
-create policy "Public can view complaints by case_number" on public.complaints
+create policy if not exists "Public can view complaints by case_number" on public.complaints
   for select using (true);
 
--- STAGES policies (read by all, write by admin)
-create policy "Anyone can view stages" on public.stages
+-- STAGES
+create policy if not exists "Anyone can view stages" on public.stages
   for select using (true);
-create policy "Admins manage stages" on public.stages
+create policy if not exists "Admins manage stages" on public.stages
   for all using (public.get_my_role() = 'admin');
 
--- LOCATIONS policies
-create policy "Anyone can view locations" on public.locations
+-- LOCATIONS
+create policy if not exists "Anyone can view locations" on public.locations
   for select using (true);
-create policy "Admins manage locations" on public.locations
+create policy if not exists "Admins manage locations" on public.locations
   for all using (public.get_my_role() = 'admin');
 
 -- COMPLAINT RESPONDENTS
-create policy "Admins manage respondents" on public.complaint_respondents
+create policy if not exists "Admins manage respondents" on public.complaint_respondents
   for all using (public.get_my_role() = 'admin');
-create policy "Respondents see own assignments" on public.complaint_respondents
+create policy if not exists "Respondents see own assignments" on public.complaint_respondents
   for select using (user_id = auth.uid());
 
 -- COMPLAINT LAWYERS
-create policy "Admins manage lawyers" on public.complaint_lawyers
+create policy if not exists "Admins manage lawyers" on public.complaint_lawyers
   for all using (public.get_my_role() = 'admin');
-create policy "Lawyers see own assignments" on public.complaint_lawyers
+create policy if not exists "Lawyers see own assignments" on public.complaint_lawyers
   for select using (user_id = auth.uid());
 
 -- COMPLAINT RESPONSES
-create policy "Admins see all responses" on public.complaint_responses
+create policy if not exists "Admins see all responses" on public.complaint_responses
   for all using (public.get_my_role() = 'admin');
-create policy "Respondents manage own responses" on public.complaint_responses
+create policy if not exists "Respondents manage own responses" on public.complaint_responses
   for all using (
     exists (
       select 1 from public.complaint_respondents cr
@@ -334,77 +296,76 @@ create policy "Respondents manage own responses" on public.complaint_responses
   );
 
 -- COMPLAINT REPLIES
-create policy "Admins manage replies" on public.complaint_replies
+create policy if not exists "Admins manage replies" on public.complaint_replies
   for all using (public.get_my_role() = 'admin');
-create policy "Users see own complaint replies" on public.complaint_replies
-  for select using (
-    user_id = auth.uid() or recipient_id = auth.uid()
-  );
-create policy "Authenticated users can reply" on public.complaint_replies
+create policy if not exists "Users see own complaint replies" on public.complaint_replies
+  for select using (user_id = auth.uid() or recipient_id = auth.uid());
+create policy if not exists "Authenticated users can reply" on public.complaint_replies
   for insert with check (auth.uid() is not null);
 
 -- ATTACHMENTS
-create policy "Admins manage attachments" on public.attachments
+create policy if not exists "Admins manage attachments" on public.attachments
   for all using (public.get_my_role() = 'admin');
-create policy "Users see attachments for own complaints" on public.attachments
+create policy if not exists "Users see attachments for own complaints" on public.attachments
   for select using (
     exists (
       select 1 from public.complaints c
       where c.id = complaint_id and (c.user_id = auth.uid() or public.get_my_role() in ('cast_member'))
     )
   );
-create policy "Authenticated users can upload" on public.attachments
+create policy if not exists "Authenticated users can upload" on public.attachments
   for insert with check (auth.uid() is not null);
 
 -- INVESTIGATION LOGS
-create policy "Admins manage logs" on public.investigation_logs
+create policy if not exists "Admins manage logs" on public.investigation_logs
   for all using (public.get_my_role() = 'admin');
-create policy "Cast members view logs" on public.investigation_logs
+create policy if not exists "Cast members view logs" on public.investigation_logs
   for select using (public.get_my_role() = 'cast_member');
 
 -- CASE RESOLUTIONS
-create policy "Admins manage resolutions" on public.case_resolutions
+create policy if not exists "Admins manage resolutions" on public.case_resolutions
   for all using (public.get_my_role() = 'admin');
-create policy "Anyone can view resolutions" on public.case_resolutions
+create policy if not exists "Anyone can view resolutions" on public.case_resolutions
   for select using (true);
 
 -- CASE SIGNATURES
-create policy "Admins manage signatures" on public.case_signatures
+create policy if not exists "Admins manage signatures" on public.case_signatures
   for all using (public.get_my_role() = 'admin');
-create policy "Anyone can insert signature" on public.case_signatures
+create policy if not exists "Anyone can insert signature" on public.case_signatures
   for insert with check (true);
-create policy "Anyone can view signatures" on public.case_signatures
+create policy if not exists "Anyone can view signatures" on public.case_signatures
   for select using (true);
 
 -- RESPONDENT ACCESSES
-create policy "Admins manage respondent access" on public.respondent_accesses
+create policy if not exists "Admins manage respondent access" on public.respondent_accesses
   for all using (public.get_my_role() = 'admin');
-create policy "Respondents see own access" on public.respondent_accesses
+create policy if not exists "Respondents see own access" on public.respondent_accesses
   for select using (user_id = auth.uid());
 
 -- LAWYER ACCESSES
-create policy "Admins manage lawyer access" on public.lawyer_accesses
+create policy if not exists "Admins manage lawyer access" on public.lawyer_accesses
   for all using (public.get_my_role() = 'admin');
-create policy "Lawyers see own access" on public.lawyer_accesses
+create policy if not exists "Lawyers see own access" on public.lawyer_accesses
   for select using (user_id = auth.uid());
 
 -- GUEST OTPS
-create policy "Public can insert guest otp" on public.guest_otps
+create policy if not exists "Public can insert guest otp" on public.guest_otps
   for insert with check (true);
-create policy "Public can view guest otp" on public.guest_otps
+create policy if not exists "Public can view guest otp" on public.guest_otps
   for select using (true);
-create policy "Public can update guest otp" on public.guest_otps
+create policy if not exists "Public can update guest otp" on public.guest_otps
   for update using (true);
 
 -- STAGE CHANGE LOGS
-create policy "Admins manage stage logs" on public.stage_change_logs
+create policy if not exists "Admins manage stage logs" on public.stage_change_logs
   for all using (public.get_my_role() = 'admin');
-create policy "Anyone can view stage logs" on public.stage_change_logs
+create policy if not exists "Anyone can view stage logs" on public.stage_change_logs
   for select using (true);
 
 -- =============================================
--- AUTO-CREATE PROFILE ON SIGNUP
+-- AUTH TRIGGER
 -- =============================================
+
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer as $$
 begin
@@ -419,6 +380,7 @@ begin
 end;
 $$;
 
+drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
@@ -426,17 +388,22 @@ create trigger on_auth_user_created
 -- =============================================
 -- STORAGE BUCKETS
 -- =============================================
-insert into storage.buckets (id, name, public) values ('complaint-attachments', 'complaint-attachments', true);
-insert into storage.buckets (id, name, public) values ('signatures', 'signatures', true);
 
-create policy "Public can upload attachments" on storage.objects
+insert into storage.buckets (id, name, public)
+  values ('complaint-attachments', 'complaint-attachments', true)
+  on conflict (id) do nothing;
+
+insert into storage.buckets (id, name, public)
+  values ('signatures', 'signatures', true)
+  on conflict (id) do nothing;
+
+create policy if not exists "Public can upload attachments" on storage.objects
   for insert with check (bucket_id = 'complaint-attachments');
-create policy "Public can view attachments" on storage.objects
+create policy if not exists "Public can view attachments" on storage.objects
   for select using (bucket_id = 'complaint-attachments');
-create policy "Admins can delete attachments" on storage.objects
+create policy if not exists "Admins can delete attachments" on storage.objects
   for delete using (bucket_id = 'complaint-attachments' and public.get_my_role() = 'admin');
-
-create policy "Public can upload signatures" on storage.objects
+create policy if not exists "Public can upload signatures" on storage.objects
   for insert with check (bucket_id = 'signatures');
-create policy "Public can view signatures" on storage.objects
+create policy if not exists "Public can view signatures" on storage.objects
   for select using (bucket_id = 'signatures');
