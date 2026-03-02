@@ -6,7 +6,7 @@ import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Textarea from '@/components/ui/Textarea'
-import { supabase } from '@/lib/supabase'
+import { supabase, getErrorMessage } from '@/lib/supabase'
 import { useAuthStore } from '@/store/authStore'
 import { formatDate, formatDateTime, getStatusLabel } from '@/lib/utils'
 import { ArrowLeft, Upload, CheckCircle, Paperclip } from 'lucide-react'
@@ -149,7 +149,7 @@ export default function RespondentComplaintDetail() {
       toast.success('Response submitted successfully')
       load()
     } catch (err) {
-      toast.error(err.message || 'Failed to submit')
+      toast.error(getErrorMessage(err))
     } finally {
       setSaving(false)
     }

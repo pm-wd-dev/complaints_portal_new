@@ -6,7 +6,7 @@ import Input from '@/components/ui/Input'
 import Select from '@/components/ui/Select'
 import Modal from '@/components/ui/Modal'
 import Badge from '@/components/ui/Badge'
-import { supabase } from '@/lib/supabase'
+import { supabase, getErrorMessage } from '@/lib/supabase'
 import { formatDateTime } from '@/lib/utils'
 import { Plus, Trash2, Edit2 } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -57,7 +57,7 @@ export default function UsersPage() {
       setShowModal(false)
       load()
     } catch (err) {
-      toast.error(err.message || 'Failed to save user')
+      toast.error(getErrorMessage(err))
     } finally {
       setSaving(false)
     }

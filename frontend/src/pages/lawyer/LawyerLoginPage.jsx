@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
-import { supabase } from '@/lib/supabase'
+import { supabase, getErrorMessage } from '@/lib/supabase'
 import { useAuthStore } from '@/store/authStore'
 import toast from 'react-hot-toast'
 import { Scale } from 'lucide-react'
@@ -30,7 +30,7 @@ export default function LawyerLoginPage() {
       toast.success('OTP sent (use: 0000 for testing)')
       setStep('otp')
     } catch (err) {
-      toast.error(err.message || 'Invalid credentials')
+      toast.error(getErrorMessage(err))
     } finally {
       setLoading(false)
     }

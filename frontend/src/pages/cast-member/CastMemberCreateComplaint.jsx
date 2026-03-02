@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Textarea from '@/components/ui/Textarea'
-import { supabase } from '@/lib/supabase'
+import { supabase, getErrorMessage } from '@/lib/supabase'
 import { useAuthStore } from '@/store/authStore'
 import { generateCaseNumber } from '@/lib/utils'
 import toast from 'react-hot-toast'
@@ -112,7 +112,7 @@ export default function CastMemberCreateComplaint() {
       toast.success('Complaint submitted successfully!')
       navigate(`/cast-member/complaints/${data.id}`)
     } catch (err) {
-      toast.error(err.message || 'Failed to submit complaint')
+      toast.error(getErrorMessage(err))
     } finally {
       setLoading(false)
     }

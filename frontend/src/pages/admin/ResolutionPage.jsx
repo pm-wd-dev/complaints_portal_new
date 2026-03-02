@@ -7,7 +7,7 @@ import Textarea from '@/components/ui/Textarea'
 import Select from '@/components/ui/Select'
 import Input from '@/components/ui/Input'
 import Modal from '@/components/ui/Modal'
-import { supabase } from '@/lib/supabase'
+import { supabase, getErrorMessage } from '@/lib/supabase'
 import { formatDate, formatDateTime } from '@/lib/utils'
 import { ArrowLeft, FileText, Download, PenTool, CheckCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -67,7 +67,7 @@ export default function ResolutionPage() {
       }
       load()
     } catch (err) {
-      toast.error(err.message || 'Failed to save')
+      toast.error(getErrorMessage(err))
     } finally {
       setSaving(false)
     }
@@ -135,7 +135,7 @@ export default function ResolutionPage() {
       clearCanvas()
       load()
     } catch (err) {
-      toast.error(err.message || 'Failed to add signature')
+      toast.error(getErrorMessage(err))
     } finally {
       setSaving(false)
     }

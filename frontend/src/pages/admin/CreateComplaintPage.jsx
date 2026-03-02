@@ -6,7 +6,7 @@ import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Textarea from '@/components/ui/Textarea'
 import Select from '@/components/ui/Select'
-import { supabase } from '@/lib/supabase'
+import { supabase, getErrorMessage } from '@/lib/supabase'
 import { generateCaseNumber } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import { ArrowLeft } from 'lucide-react'
@@ -42,7 +42,7 @@ export default function CreateComplaintPage() {
       toast.success('Complaint created')
       navigate(`/admin/complaints/${data.id}`)
     } catch (err) {
-      toast.error(err.message || 'Failed to create')
+      toast.error(getErrorMessage(err))
     } finally {
       setLoading(false)
     }

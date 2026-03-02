@@ -12,30 +12,43 @@ export const useAuthStore = create((set, get) => ({
 
   initialize: async () => {
     set({ loading: true })
-    const { data: { session } } = await supabase.auth.getSession()
-    if (session?.user) {
-      set({ user: session.user })
-      await get().fetchProfile(session.user.id)
-    }
-    set({ loading: false })
-
-    supabase.auth.onAuthStateChange(async (_event, session) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {
         set({ user: session.user })
         await get().fetchProfile(session.user.id)
-      } else {
-        set({ user: null, profile: null })
+      }
+    } catch {
+      // Supabase unreachable or not configured — continue as unauthenticated
+    } finally {
+      set({ loading: false })
+    }
+
+    supabase.auth.onAuthStateChange(async (_event, session) => {
+      try {
+        if (session?.user) {
+          set({ user: session.user })
+          await get().fetchProfile(session.user.id)
+        } else {
+          set({ user: null, profile: null })
+        }
+      } catch {
+        // ignore auth state change errors
       }
     })
   },
 
   fetchProfile: async (userId) => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single()
-    if (data) set({ profile: data })
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+      if (data) set({ profile: data })
+    } catch {
+      // ignore — user continues without profile
+    }
   },
 
   signIn: async (email, password) => {
@@ -45,14 +58,16 @@ export const useAuthStore = create((set, get) => ({
   },
 
   signOut: async () => {
-    await supabase.auth.signOut()
+    try {
+      await supabase.auth.signOut()
+    } catch {
+      // ignore signout errors
+    }
     set({ user: null, profile: null })
-    // clear respondent/lawyer session
     sessionStorage.removeItem('respondent_session')
     sessionStorage.removeItem('lawyer_session')
   },
 
-  // Respondent/Lawyer session (token-based, stored in sessionStorage)
   setRespondentSession: (data) => sessionStorage.setItem('respondent_session', JSON.stringify(data)),
   getRespondentSession: () => {
     try { return JSON.parse(sessionStorage.getItem('respondent_session')) } catch { return null }

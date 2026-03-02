@@ -6,7 +6,7 @@ import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
 import Textarea from '@/components/ui/Textarea'
 import Modal from '@/components/ui/Modal'
-import { supabase } from '@/lib/supabase'
+import { supabase, getErrorMessage } from '@/lib/supabase'
 import { useAuthStore } from '@/store/authStore'
 import { formatDateTime, getStatusLabel } from '@/lib/utils'
 import { Eye, MessageSquare, ExternalLink } from 'lucide-react'
@@ -61,7 +61,7 @@ export default function RespondentDashboard() {
       setResponseText('')
       loadAssignments()
     } catch (err) {
-      toast.error(err.message || 'Failed to submit')
+      toast.error(getErrorMessage(err))
     } finally {
       setSaving(false)
     }

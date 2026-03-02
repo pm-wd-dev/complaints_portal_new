@@ -4,7 +4,7 @@ import { useAuthStore } from '@/store/authStore'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import { Card, CardContent } from '@/components/ui/Card'
-import { supabase } from '@/lib/supabase'
+import { supabase, getErrorMessage } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 import { ShieldCheck } from 'lucide-react'
 
@@ -49,7 +49,7 @@ export default function LoginPage() {
         toast.error('Your account does not have portal access')
       }
     } catch (err) {
-      toast.error(err.message || 'Invalid credentials')
+      toast.error(getErrorMessage(err))
     } finally {
       setLoading(false)
     }

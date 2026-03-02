@@ -6,7 +6,7 @@ import Input from '@/components/ui/Input'
 import Textarea from '@/components/ui/Textarea'
 import Select from '@/components/ui/Select'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
-import { supabase } from '@/lib/supabase'
+import { supabase, getErrorMessage } from '@/lib/supabase'
 import { generateCaseNumber } from '@/lib/utils'
 import toast from 'react-hot-toast'
 import { CheckCircle } from 'lucide-react'
@@ -27,7 +27,16 @@ export default function SubmitComplaintPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!form.description.trim()) return toast.error('Description is required')
+
+    if (!form.description.trim()) {
+      toast.error('Please describe your complaint before submitting.')
+      return
+    }
+    if (form.description.trim().length < 20) {
+      toast.error('Please provide more detail — at least 20 characters.')
+      return
+    }
+
     setLoading(true)
     try {
       const caseNumber = generateCaseNumber('guest')
@@ -41,7 +50,7 @@ export default function SubmitComplaintPage() {
       if (error) throw error
       setSubmitted(caseNumber)
     } catch (err) {
-      toast.error(err.message || 'Failed to submit complaint')
+      toast.error(getErrorMessage(err))
     } finally {
       setLoading(false)
     }

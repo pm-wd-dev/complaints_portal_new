@@ -4,7 +4,7 @@ import PortalLayout from '@/components/layout/PortalLayout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import Badge from '@/components/ui/Badge'
 import Button from '@/components/ui/Button'
-import { supabase } from '@/lib/supabase'
+import { supabase, getErrorMessage } from '@/lib/supabase'
 import { useAuthStore } from '@/store/authStore'
 import { formatDate, formatDateTime, getStatusLabel } from '@/lib/utils'
 import { ArrowLeft, User, Paperclip } from 'lucide-react'
@@ -59,7 +59,7 @@ export default function CastMemberComplaintDetail() {
       toast.success('File uploaded')
       load()
     } catch (err) {
-      toast.error(err.message || 'Upload failed')
+      toast.error(getErrorMessage(err))
     } finally {
       setUploading(false)
       e.target.value = ''
