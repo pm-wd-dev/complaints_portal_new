@@ -1,0 +1,31 @@
+# Laravel
+/vendor/
+/node_modules/
+/.env
+/.env.backup
+/.env.production
+.phpunit.result.cache
+/storage/logs/
+/storage/framework/cache/
+/storage/framework/sessions/
+/storage/framework/views/
+/bootstrap/cache/
+/public/hot
+/public/storage
+
+# Frontend
+/frontend/node_modules/
+/frontend/dist/
+/frontend/.env
+/frontend/.env.local
+/frontend/.env.production
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
