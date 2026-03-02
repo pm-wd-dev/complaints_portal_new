@@ -33,6 +33,7 @@ export default function CreateComplaintPage() {
       const caseNumber = generateCaseNumber('standard')
       const { data, error } = await supabase.from('complaints').insert({
         case_number: caseNumber, ...form,
+        date_of_experience: form.date_of_experience || null,
         status: 'submitted',
         submitted_by_admin: true,
         submitted_by_admin_id: user?.id,
