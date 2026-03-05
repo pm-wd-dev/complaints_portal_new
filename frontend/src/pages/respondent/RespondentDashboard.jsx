@@ -15,9 +15,8 @@ import toast from 'react-hot-toast'
 const statusVariant = { submitted:'blue', under_review:'yellow', escalated:'orange', resolved:'green', closed:'default' }
 
 export default function RespondentDashboard() {
-  const { getRespondentSession, clearRespondentSession } = useAuthStore()
+  const { user, profile, signOut } = useAuthStore()
   const navigate = useNavigate()
-  const session = getRespondentSession()
   const [assignments, setAssignments] = useState([])
   const [loading, setLoading] = useState(true)
   const [showResponseModal, setShowResponseModal] = useState(null)
@@ -25,25 +24,23 @@ export default function RespondentDashboard() {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    if (!session) { navigate('/respondent/login'); return }
-    loadAssignments()
-  }, [])
+    if (user) loadAssignments()
+  }, [user])
 
   const loadAssignments = async () => {
     setLoading(true)
     const { data } = await supabase
       .from('complaint_respondents')
       .select('*, complaints(*), complaint_responses(*)')
-      .eq('user_id', session.userId)
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false })
     setAssignments(data || [])
     setLoading(false)
   }
 
   const handleSignOut = async () => {
-    clearRespondentSession()
-    await supabase.auth.signOut()
-    navigate('/respondent/login')
+    await signOut()
+    navigate('/login')
   }
 
   const submitResponse = async () => {
@@ -68,7 +65,7 @@ export default function RespondentDashboard() {
   }
 
   return (
-    <PortalLayout title="Respondent Dashboard" role="respondent" onSignOut={handleSignOut} userName={session?.profile?.name}>
+    <PortalLayout title="Respondent Dashboard" role="respondent" onSignOut={handleSignOut} userName={profile?.name}>
       <div className="mb-6">
         <h2 className="text-xl font-bold text-gray-900">My Assigned Complaints</h2>
         <p className="text-gray-500 text-sm mt-1">{assignments.length} complaints assigned to you</p>

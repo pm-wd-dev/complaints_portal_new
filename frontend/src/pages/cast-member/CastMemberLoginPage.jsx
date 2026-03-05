@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { Card, CardContent } from '@/components/ui/Card'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
-import { supabase, getErrorMessage } from '@/lib/supabase'
+import { getErrorMessage } from '@/lib/supabase'
 import { useAuthStore } from '@/store/authStore'
 import toast from 'react-hot-toast'
 import { Users } from 'lucide-react'
@@ -12,17 +12,17 @@ export default function CastMemberLoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
-  const { signIn } = useAuthStore()
+  const { signIn, signOut } = useAuthStore()
   const navigate = useNavigate()
 
   const handleLogin = async (e) => {
     e.preventDefault()
     setLoading(true)
     try {
-      const { user } = await signIn(email, password)
-      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
-      if (profile?.role !== 'cast_member') {
-        await supabase.auth.signOut()
+      await signIn(email, password)
+      const currentProfile = useAuthStore.getState().profile
+      if (currentProfile?.role !== 'cast_member') {
+        await signOut()
         return toast.error('Not authorized as cast member')
       }
       toast.success('Welcome!')

@@ -16,8 +16,7 @@ const statusVariant = { submitted:'blue', under_review:'yellow', escalated:'oran
 export default function LawyerComplaintDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { getLawyerSession, clearLawyerSession } = useAuthStore()
-  const session = getLawyerSession()
+  const { user, profile, signOut } = useAuthStore()
   const [complaint, setComplaint] = useState(null)
   const [assignment, setAssignment] = useState(null)
   const [attachments, setAttachments] = useState([])
@@ -26,15 +25,14 @@ export default function LawyerComplaintDetail() {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    if (!session) { navigate('/lawyer/login'); return }
-    load()
-  }, [id])
+    if (user) load()
+  }, [id, user])
 
   const load = async () => {
     setLoading(true)
     const [{ data: c }, { data: cl }, { data: att }] = await Promise.all([
       supabase.from('complaints').select('*, stages(*)').eq('id', id).single(),
-      supabase.from('complaint_lawyers').select('*').eq('complaint_id', id).eq('user_id', session.userId).single(),
+      supabase.from('complaint_lawyers').select('*').eq('complaint_id', id).eq('user_id', user.id).single(),
       supabase.from('attachments').select('*').eq('complaint_id', id),
     ])
     setComplaint(c)
@@ -59,19 +57,18 @@ export default function LawyerComplaintDetail() {
   }
 
   const handleSignOut = async () => {
-    clearLawyerSession()
-    await supabase.auth.signOut()
-    navigate('/lawyer/login')
+    await signOut()
+    navigate('/login')
   }
 
   if (loading) return (
-    <PortalLayout title="Lawyer Portal" role="lawyer" onSignOut={handleSignOut} userName={session?.profile?.name}>
+    <PortalLayout title="Lawyer Portal" role="lawyer" onSignOut={handleSignOut} userName={profile?.name}>
       <div className="p-10 text-center text-gray-400">Loading...</div>
     </PortalLayout>
   )
 
   return (
-    <PortalLayout title="Lawyer Portal" role="lawyer" onSignOut={handleSignOut} userName={session?.profile?.name}>
+    <PortalLayout title="Lawyer Portal" role="lawyer" onSignOut={handleSignOut} userName={profile?.name}>
       <div className="mb-6 flex items-center gap-3">
         <Button variant="ghost" size="sm" onClick={() => navigate('/lawyer/dashboard')}><ArrowLeft size={15}/> Back</Button>
         <div className="flex-1">

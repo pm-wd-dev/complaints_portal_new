@@ -54,6 +54,11 @@ export const useAuthStore = create((set, get) => ({
   signIn: async (email, password) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
+    // Fetch profile immediately after sign-in so role is available
+    if (data?.user) {
+      set({ user: data.user })
+      await get().fetchProfile(data.user.id)
+    }
     return data
   },
 
@@ -64,19 +69,11 @@ export const useAuthStore = create((set, get) => ({
       // ignore signout errors
     }
     set({ user: null, profile: null })
-    sessionStorage.removeItem('respondent_session')
-    sessionStorage.removeItem('lawyer_session')
   },
 
-  setRespondentSession: (data) => sessionStorage.setItem('respondent_session', JSON.stringify(data)),
-  getRespondentSession: () => {
-    try { return JSON.parse(sessionStorage.getItem('respondent_session')) } catch { return null }
+  // Helper to check role
+  hasRole: (role) => {
+    const profile = get().profile
+    return profile?.role === role
   },
-  clearRespondentSession: () => sessionStorage.removeItem('respondent_session'),
-
-  setLawyerSession: (data) => sessionStorage.setItem('lawyer_session', JSON.stringify(data)),
-  getLawyerSession: () => {
-    try { return JSON.parse(sessionStorage.getItem('lawyer_session')) } catch { return null }
-  },
-  clearLawyerSession: () => sessionStorage.removeItem('lawyer_session'),
 }))

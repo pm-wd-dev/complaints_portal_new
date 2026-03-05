@@ -25,8 +25,7 @@ const EVIDENCE_OPTIONS = [
 export default function RespondentComplaintDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { getRespondentSession, clearRespondentSession } = useAuthStore()
-  const session = getRespondentSession()
+  const { user, profile, signOut } = useAuthStore()
 
   const [complaint, setComplaint]   = useState(null)
   const [assignment, setAssignment] = useState(null)
@@ -61,9 +60,8 @@ export default function RespondentComplaintDetail() {
   }
 
   useEffect(() => {
-    if (!session) { navigate('/login'); return }
-    load()
-  }, [id])
+    if (user) load()
+  }, [id, user])
 
   const load = async () => {
     setLoading(true)
@@ -71,7 +69,7 @@ export default function RespondentComplaintDetail() {
       const [{ data: c }, { data: cr }, { data: att }] = await Promise.all([
         supabase.from('complaints').select('*, stages(*)').eq('id', id).single(),
         supabase.from('complaint_respondents').select('*, complaint_responses(*)')
-          .eq('complaint_id', id).eq('user_id', session.userId).single(),
+          .eq('complaint_id', id).eq('user_id', user.id).single(),
         supabase.from('attachments').select('*').eq('complaint_id', id),
       ])
       setComplaint(c)
@@ -140,7 +138,7 @@ export default function RespondentComplaintDetail() {
             file_name: evidenceFile.name,
             file_type: evidenceFile.type,
             file_size: evidenceFile.size,
-            uploaded_by: session.userId,
+            uploaded_by: user.id,
             type: 'response',
           })
         }
@@ -156,13 +154,12 @@ export default function RespondentComplaintDetail() {
   }
 
   const handleSignOut = async () => {
-    clearRespondentSession()
-    await supabase.auth.signOut()
+    await signOut()
     navigate('/login')
   }
 
   if (loading) return (
-    <PortalLayout title="Respondent Portal" role="respondent" onSignOut={handleSignOut} userName={session?.profile?.name}>
+    <PortalLayout title="Respondent Portal" role="respondent" onSignOut={handleSignOut} userName={profile?.name}>
       <div className="p-10 text-center text-gray-400">Loading...</div>
     </PortalLayout>
   )
@@ -170,7 +167,7 @@ export default function RespondentComplaintDetail() {
   const hasResponded = !!assignment?.responded_at
 
   return (
-    <PortalLayout title="Respondent Portal" role="respondent" onSignOut={handleSignOut} userName={session?.profile?.name}>
+    <PortalLayout title="Respondent Portal" role="respondent" onSignOut={handleSignOut} userName={profile?.name}>
       <div className="mb-6 flex items-center gap-3">
         <Button variant="ghost" size="sm" onClick={() => navigate('/respondent/dashboard')}>
           <ArrowLeft size={15} /> Back
@@ -234,7 +231,7 @@ export default function RespondentComplaintDetail() {
               <CardContent className="pt-5 pb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email <span className="text-red-500">*</span></label>
                 <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600">
-                  {session?.profile?.email || '—'}
+                  {profile?.email || '—'}
                 </div>
               </CardContent>
             </Card>
@@ -275,7 +272,7 @@ export default function RespondentComplaintDetail() {
               <CardContent className="pt-5 pb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Your Name — Who is responding to this complaint? <span className="text-red-500">*</span></label>
                 <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600">
-                  {session?.profile?.name || '—'}
+                  {profile?.name || '—'}
                 </div>
               </CardContent>
             </Card>

@@ -15,9 +15,8 @@ import toast from 'react-hot-toast'
 const statusVariant = { submitted:'blue', under_review:'yellow', escalated:'orange', resolved:'green', closed:'default' }
 
 export default function LawyerDashboard() {
-  const { getLawyerSession, clearLawyerSession } = useAuthStore()
+  const { user, profile, signOut } = useAuthStore()
   const navigate = useNavigate()
-  const session = getLawyerSession()
   const [assignments, setAssignments] = useState([])
   const [loading, setLoading] = useState(true)
   const [showResponseModal, setShowResponseModal] = useState(null)
@@ -25,25 +24,23 @@ export default function LawyerDashboard() {
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    if (!session) { navigate('/lawyer/login'); return }
-    loadAssignments()
-  }, [])
+    if (user) loadAssignments()
+  }, [user])
 
   const loadAssignments = async () => {
     setLoading(true)
     const { data } = await supabase
       .from('complaint_lawyers')
       .select('*, complaints(*)')
-      .eq('user_id', session.userId)
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false })
     setAssignments(data || [])
     setLoading(false)
   }
 
   const handleSignOut = async () => {
-    clearLawyerSession()
-    await supabase.auth.signOut()
-    navigate('/lawyer/login')
+    await signOut()
+    navigate('/login')
   }
 
   const submitInput = async () => {
@@ -66,7 +63,7 @@ export default function LawyerDashboard() {
   }
 
   return (
-    <PortalLayout title="Lawyer Portal" role="lawyer" onSignOut={handleSignOut} userName={session?.profile?.name}>
+    <PortalLayout title="Lawyer Portal" role="lawyer" onSignOut={handleSignOut} userName={profile?.name}>
       <div className="mb-6">
         <h2 className="text-xl font-bold text-gray-900">Assigned Cases</h2>
         <p className="text-gray-500 text-sm mt-1">{assignments.length} cases assigned</p>

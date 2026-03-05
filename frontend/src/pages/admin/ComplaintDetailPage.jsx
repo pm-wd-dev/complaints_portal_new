@@ -9,7 +9,8 @@ import Textarea from '@/components/ui/Textarea'
 import Modal from '@/components/ui/Modal'
 import { supabase } from '@/lib/supabase'
 import { formatDate, formatDateTime, getStatusLabel } from '@/lib/utils'
-import { ArrowLeft, User, Calendar, MapPin, FileText, Plus, Trash2, Scroll } from 'lucide-react'
+import { ArrowLeft, User, Calendar, MapPin, FileText, Plus, Trash2, Scroll, Paperclip } from 'lucide-react'
+import { useAuthStore } from '@/store/authStore'
 import toast from 'react-hot-toast'
 
 const STATUSES = ['submitted','under_review','escalated','resolved','closed']
@@ -28,19 +29,23 @@ export default function ComplaintDetailPage() {
   const [saving, setSaving] = useState(false)
   const [showLogModal, setShowLogModal] = useState(false)
   const [logForm, setLogForm] = useState({ note: '', next_steps: '' })
+  const [attachments, setAttachments] = useState([])
+  const [uploading, setUploading] = useState(false)
   const [showAssignModal, setShowAssignModal] = useState(null) // 'respondent' | 'lawyer'
   const [assignUserId, setAssignUserId] = useState('')
+  const { user } = useAuthStore()
 
   const load = async () => {
     setLoading(true)
     try {
-      const [{ data: c }, { data: s }, { data: cr }, { data: cl }, { data: il }, { data: u }] = await Promise.all([
+      const [{ data: c }, { data: s }, { data: cr }, { data: cl }, { data: il }, { data: u }, { data: att }] = await Promise.all([
         supabase.from('complaints').select('*, stages(*), locations(*)').eq('id', id).single(),
         supabase.from('stages').select('*').eq('is_active', true).order('step_number'),
         supabase.from('complaint_respondents').select('*, profiles(*)').eq('complaint_id', id),
         supabase.from('complaint_lawyers').select('*, profiles(*)').eq('complaint_id', id),
         supabase.from('investigation_logs').select('*, profiles(name)').eq('complaint_id', id).order('created_at', { ascending: false }),
         supabase.from('profiles').select('id,name,email,role').in('role', ['respondent','lawyer']),
+        supabase.from('attachments').select('*').eq('complaint_id', id).order('created_at', { ascending: false }),
       ])
       setComplaint(c)
       setStages(s || [])
@@ -48,6 +53,7 @@ export default function ComplaintDetailPage() {
       setLawyers(cl || [])
       setLogs(il || [])
       setAllUsers(u || [])
+      setAttachments(att || [])
     } catch (err) {
       toast.error('Failed to load complaint details')
     } finally {
@@ -98,6 +104,31 @@ export default function ComplaintDetailPage() {
     const { error } = await supabase.from(table).insert({ complaint_id: id, user_id: assignUserId })
     if (error) toast.error(error.message || 'Failed to assign')
     else { toast.success('Assigned successfully'); setShowAssignModal(null); setAssignUserId(''); load() }
+  }
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    if (file.size > 50 * 1024 * 1024) return toast.error('File too large (max 50MB)')
+    setUploading(true)
+    try {
+      const ext = file.name.split('.').pop()
+      const path = `complaints/${id}/${Date.now()}.${ext}`
+      const { error: uploadError } = await supabase.storage.from('complaint-attachments').upload(path, file)
+      if (uploadError) throw uploadError
+      const { data: { publicUrl } } = supabase.storage.from('complaint-attachments').getPublicUrl(path)
+      await supabase.from('attachments').insert({
+        complaint_id: id, file_path: publicUrl, file_name: file.name,
+        file_type: file.type, file_size: file.size, uploaded_by: user?.id, type: 'evidence'
+      })
+      toast.success('File uploaded')
+      load()
+    } catch (err) {
+      toast.error('Upload failed: ' + (err.message || 'Unknown error'))
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+    }
   }
 
   const removeAssignment = async (table, assignId) => {
@@ -216,6 +247,35 @@ export default function ComplaintDetailPage() {
                   </div>
                 </div>
               ))}
+            </CardContent>
+          </Card>
+
+          {/* Attachments */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Attachments</CardTitle>
+                <label className={`cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-blue-700 text-white hover:bg-blue-800 transition-colors ${uploading ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                  <Paperclip size={13} /> {uploading ? 'Uploading...' : 'Upload File'}
+                  <input type="file" className="hidden" onChange={handleFileUpload} disabled={uploading} accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.mp4,.mov" />
+                </label>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {attachments.length === 0 ? (
+                <p className="text-sm text-gray-400">No attachments yet</p>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {attachments.map(att => (
+                    <a key={att.id} href={att.file_path} target="_blank" rel="noreferrer"
+                      className="flex items-center gap-2 text-sm text-blue-700 hover:underline p-2 border border-gray-100 rounded-lg hover:bg-gray-50">
+                      <Paperclip size={13} />
+                      <span className="flex-1 truncate">{att.file_name || 'Attachment'}</span>
+                      <span className="text-xs text-gray-400">{att.file_size ? `${(att.file_size / 1024).toFixed(0)} KB` : ''}</span>
+                    </a>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
