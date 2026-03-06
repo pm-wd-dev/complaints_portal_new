@@ -2,5 +2,11 @@
   "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/dist",
   "installCommand": "echo 'skip'",
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    { "source": "/supabase/rest/:path*", "destination": "https://kbpjpcasaaidcdnvguke.supabase.co/rest/:path*" },
+    { "source": "/supabase/auth/:path*", "destination": "https://kbpjpcasaaidcdnvguke.supabase.co/auth/:path*" },
+    { "source": "/supabase/storage/:path*", "destination": "https://kbpjpcasaaidcdnvguke.supabase.co/storage/:path*" },
+    { "source": "/supabase/realtime/:path*", "destination": "https://kbpjpcasaaidcdnvguke.supabase.co/realtime/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }

@@ -1,9 +1,16 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const directUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-if (!supabaseUrl || !supabaseAnonKey) {
+// In production, proxy through Vercel to bypass ISP blocks on supabase.co
+// The proxy rewrites in vercel.json forward /supabase/* to the real Supabase URL
+const isProduction = import.meta.env.PROD
+const supabaseUrl = isProduction
+  ? `${window.location.origin}/supabase`
+  : directUrl
+
+if (!directUrl || !supabaseAnonKey) {
   console.error(
     '[Supabase] VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are not set. ' +
     'All database requests will fail until these are configured.'
