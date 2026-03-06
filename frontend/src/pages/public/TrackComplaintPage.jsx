@@ -38,7 +38,7 @@ function buildTimeline(complaint) {
       id: log.id,
       type: 'stage',
       date: log.created_at,
-      title: `Moved to stage: ${log.stages?.name || 'Unknown'}`,
+      title: `Moved to stage: ${log.to_stage?.name || 'Unknown'}`,
       body: log.note || null,
       icon: Layers,
       dotClass: 'bg-blue-500',
@@ -79,7 +79,7 @@ export default function TrackComplaintPage() {
     try {
       const { data, error } = await supabase
         .from('complaints')
-        .select('*, stages(*), stage_change_logs(*, stages(*))')
+        .select('*, stages(*), stage_change_logs(*, from_stage:stages!stage_change_logs_from_stage_id_fkey(*), to_stage:stages!stage_change_logs_to_stage_id_fkey(*))')
         .eq('case_number', caseNumber.trim().toUpperCase())
         .single()
       if (error || !data) { setNotFound(true); return }
